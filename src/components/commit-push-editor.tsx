@@ -12,23 +12,59 @@ export default function CommitPushTestPage() {
     setLoading(true)
     setStatus([])
     
-    // Simulate API calls for demo purposes
     try {
-      // Simulate file save
+      // Step 1: Save the file to data/content/
+      setStatus(prev => [...prev, `📝 Saving file: data/content/${filename}`])
+      
+      const saveResponse = await fetch('/api/content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: filename.replace('.txt', '').replace('.md', ''),
+          type: filename.endsWith('.md') ? 'Markdown' : 'Text',
+          targetLocation: `/content/${filename}`,
+          submittedBy: author,
+          currentContent: '',
+          proposedContent: content,
+          tags: ['test', 'editor']
+        })
+      })
+
+      if (!saveResponse.ok) {
+        throw new Error(`Failed to save file: ${saveResponse.statusText}`)
+      }
+
       setStatus(prev => [...prev, `✅ File saved as data/content/${filename}`])
       
-      // Simulate delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Step 2: Commit and push to Git
+      setStatus(prev => [...prev, `🔄 Committing to Git repository...`])
       
-      // Simulate commit and push
-      setStatus(prev => [...prev, '✅ Committed to Git repo'])
+      const publishResponse = await fetch('/api/publish', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: commitMessage,
+          author: author
+        })
+      })
+
+      const publishData = await publishResponse.json()
+
+      if (publishResponse.ok) {
+        setStatus(prev => [...prev, `✅ ${publishData.message}`])
+        if (publishData.message.includes('pushed')) {
+          setStatus(prev => [...prev, `🚀 Successfully pushed to GitHub!`])
+        }
+      } else {
+        throw new Error(publishData.error || 'Failed to commit changes')
+      }
       
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      setStatus(prev => [...prev, '✅ Pushed to GitHub'])
-      
-    } catch (err) {
-      setStatus(prev => [...prev, '❌ Error: ' + err.message])
+    } catch (err: any) {
+      setStatus(prev => [...prev, `❌ Error: ${err.message}`])
     } finally {
       setLoading(false)
     }
@@ -36,7 +72,7 @@ export default function CommitPushTestPage() {
 
   return (
     <div className="max-w-xl mx-auto mt-12 p-6 border border-gray-200 rounded-xl shadow-lg bg-white">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">🚀 Commit + Push Editor</h1>
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">🚀 Real Git Commit + Push Editor</h1>
       
       <div className="space-y-4">
         <div>
@@ -81,10 +117,10 @@ export default function CommitPushTestPage() {
 
         <button
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={loading || !content.trim() || !commitMessage.trim()}
           className="w-full bg-black text-white px-4 py-3 rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
         >
-          {loading ? 'Pushing...' : 'Commit & Push'}
+          {loading ? 'Processing...' : 'Save File & Commit to Git 🔥'}
         </button>
       </div>
 
