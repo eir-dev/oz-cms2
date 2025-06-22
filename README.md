@@ -1,89 +1,132 @@
-# OZ CMS 2.0
+# OZ CMS 2 - Git-Powered Content Management System
 
-A lightweight content management system with approval workflow, built with Next.js and designed for deployment on Vercel.
+A lightweight, Git-powered CMS built with Next.js 14, TypeScript, and Tailwind CSS. Features real-time content editing with automatic Git commits and an approval workflow system.
 
 ## Features
 
-- **Approval Detail Modal**: Comprehensive modal for reviewing content changes with side-by-side diff viewing
-- **Multiple Content Types**: Support for Markdown, HTML, JSON, and Image content
-- **Comment System**: Built-in commenting for collaboration during review process
-- **Approval Workflow**: Simple workflow from draft → review → approval → published
-- **No External Dependencies**: Uses local JSON file storage for simplicity
+- 📝 Real-time content editing with live preview
+- 🔄 Git-powered version control with automatic commits
+- 👥 Approval workflow system
+- 📱 Responsive design with modern UI
+- 🚀 Fast builds and serverless deployment ready
+- 📊 Content diff visualization for multiple formats (Markdown, HTML, JSON, Images)
 
-## Getting Started
+## Development
 
-### Prerequisites
+```bash
+# Install dependencies
+npm install
 
-- Node.js 18+ 
-- npm or yarn
+# Start development server
+PORT=8088 npm run dev
+```
 
-### Installation
+Visit `http://localhost:8088` to see the application.
 
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
+## Deployment
 
-2. Start the development server:
-   ```bash
-   npm run dev
-   ```
+### Google Cloud Run (CMS Application)
 
-3. Open [http://localhost:3000](http://localhost:3000) to view the application
+The CMS application runs on Google Cloud Run and pushes content to GitHub:
 
-### Environment Variables
+```bash
+# Build and deploy to Cloud Run
+chmod +x deploy.sh
+./deploy.sh YOUR_PROJECT_ID
+```
 
-For production deployment, set the following environment variable:
+### Cloudflare Pages (Static Site)
 
-- `ADMIN_SECRET`: Secret key for protecting write operations (optional)
+Your static site is automatically deployed from GitHub to Cloudflare Pages:
+
+1. Connect your GitHub repository to Cloudflare Pages
+2. Configure automatic deployments on push to main branch
+3. Your CMS pushes content → GitHub → Cloudflare Pages auto-deploys
+
+### Architecture Flow
+
+```
+CMS (Cloud Run) → Git Push → GitHub → Cloudflare Pages (Static Site)
+```
+
+## Environment Variables
+
+Create a `.env.local` file:
+
+```env
+API_TOKEN=your_secret_token_here
+GIT_USER_NAME=Your Name
+GIT_USER_EMAIL=your.email@example.com
+GITHUB_TOKEN=your_github_personal_access_token
+```
 
 ## Project Structure
 
 ```
-├── src/
-│   ├── components/          # React components
-│   │   └── approval-detail-modal.tsx
-│   ├── pages/              # Next.js pages
-│   │   ├── api/            # API routes
-│   │   ├── _app.tsx        # App wrapper
-│   │   └── index.tsx       # Main demo page
-│   └── styles/             # Global styles
-├── data/
-│   └── content.json        # Content storage
-└── vercel.json             # Vercel deployment config
+src/
+├── components/          # React components
+│   ├── approval-detail-modal.tsx
+│   ├── commit-push-editor.tsx
+│   └── git-controls.tsx
+├── lib/                # Utilities and Git operations
+│   └── gitOps.ts
+├── pages/              # Next.js pages and API routes
+│   ├── api/            # API endpoints
+│   │   ├── content/    # Content CRUD operations
+│   │   ├── publish.ts  # Git commit and push
+│   │   ├── rollback.ts # Git revert operations
+│   │   └── git/        # Git status and operations
+│   └── index.tsx       # Main application page
+└── data/               # Content storage directory
+    └── content/        # Individual content files
 ```
+
+## Tech Stack
+
+- **Framework:** Next.js 14 with TypeScript
+- **Styling:** Tailwind CSS
+- **Icons:** Lucide React
+- **Git Operations:** Simple Git
+- **Deployment:** Cloudflare Pages / Google Cloud Run
+
+## Git Integration
+
+The CMS automatically handles Git operations:
+- Creates commits when content is saved
+- Pushes changes to remote repository
+- Supports rollback via `git revert`
+- Maintains clean commit history with descriptive messages
 
 ## API Routes
 
+### Content Management
 - `GET /api/content` - Get all content items
 - `POST /api/content` - Create new content item
 - `GET /api/content/[id]` - Get specific content item
 - `PUT /api/content/[id]` - Update content item
 - `DELETE /api/content/[id]` - Delete content item
 
-## Deployment
+### Git Operations
+- `POST /api/publish` - Commit and push changes to Git
+- `POST /api/rollback` - Revert last commit
+- `GET /api/git/status` - Get repository status and history
 
-### Vercel (Recommended)
+## Production Considerations
 
-1. Push code to GitHub
-2. Connect repository to Vercel
-3. Set `ADMIN_SECRET` environment variable (optional)
-4. Deploy
+### Security
+- Uses non-root user in Docker container
+- Optional API token authentication
+- Environment-based configuration
 
-The app will automatically deploy and be available at your Vercel URL.
+### Performance
+- Optimized Docker image with Alpine Linux
+- Next.js standalone build for minimal memory usage
+- Automatic scaling with Cloud Run (0-10 instances)
 
-## Demo
-
-The main page includes a demonstration of the ApprovalDetailModal component with sample content in different formats (Markdown, HTML, JSON, Images).
-
-## Development
-
-To add new features:
-
-1. Create components in `src/components/`
-2. Add pages in `src/pages/` 
-3. Add API routes in `src/pages/api/`
-4. Update content structure in `data/content.json`
+### Cost Optimization
+- Pay-per-request pricing with Cloud Run
+- Automatic scale-to-zero when not in use
+- Minimal resource allocation (1 CPU, 1Gi memory)
 
 ## License
 

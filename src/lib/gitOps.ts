@@ -22,8 +22,88 @@ export class GitOps {
       
       await git.addConfig('user.name', userName);
       await git.addConfig('user.email', userEmail);
+      
+      // Configure GitHub token authentication if available
+      const githubToken = process.env.GITHUB_TOKEN;
+      if (githubToken) {
+        // Set up credential helper for GitHub authentication
+        await git.addConfig('credential.helper', 'store --file=.git-credentials');
+        console.log('GitHub token authentication configured');
+      }
     } catch (error) {
       console.warn('Git config setup failed:', error);
+    }
+  }
+
+  private static async ensureRemoteRepository(): Promise<void> {
+    try {
+      const remotes = await git.getRemotes(true);
+      const origin = remotes.find(remote => remote.name === 'origin');
+      
+      if (!origin) {
+        // No remote configured, set up the default GitHub repository
+        const githubToken = process.env.GITHUB_TOKEN;
+        const repoUrl = githubToken 
+          ? `https://${githubToken}@github.com/eir-dev/oz-cms2.git`
+          : 'https://github.com/eir-dev/oz-cms2.git';
+        
+        await git.addRemote('origin', repoUrl);
+        console.log('Configured remote repository:', 'https://github.com/eir-dev/oz-cms2.git');
+      } else {
+        console.log('Remote repository already configured:', origin.refs.fetch);
+        // Update existing remote with token if available
+        await this.setupGitHubAuth();
+      }
+    } catch (error) {
+      console.warn('Failed to configure remote repository:', error);
+    }
+  }
+
+  private static async setupGitHubAuth(): Promise<void> {
+    const githubToken = process.env.GITHUB_TOKEN;
+    if (!githubToken) {
+      console.log('No GitHub token provided, using default Git configuration');
+      return;
+    }
+
+    try {
+      // Get the remote URL to determine if it's a GitHub repository
+      const remotes = await git.getRemotes(true);
+      if (remotes.length === 0) {
+        console.log('No remote repository configured');
+        return;
+      }
+
+      const origin = remotes.find(remote => remote.name === 'origin');
+      if (!origin) {
+        console.log('No origin remote found');
+        return;
+      }
+
+      // If it's a GitHub repository, set up token authentication
+      if (origin.refs.fetch.includes('github.com')) {
+        // Configure the remote URL with token authentication
+        const repoUrl = origin.refs.fetch;
+        let authenticatedUrl: string;
+
+        if (repoUrl.startsWith('https://github.com/')) {
+          // HTTPS URL - add token
+          authenticatedUrl = repoUrl.replace('https://github.com/', `https://${githubToken}@github.com/`);
+        } else if (repoUrl.startsWith('git@github.com:')) {
+          // SSH URL - convert to HTTPS with token
+          const repoPath = repoUrl.replace('git@github.com:', '').replace('.git', '');
+          authenticatedUrl = `https://${githubToken}@github.com/${repoPath}.git`;
+        } else {
+          console.log('Unknown GitHub URL format:', repoUrl);
+          return;
+        }
+
+        // Update the remote URL with authentication
+        await git.remote(['set-url', 'origin', authenticatedUrl]);
+        console.log('GitHub authentication configured for remote repository');
+      }
+    } catch (error) {
+      console.warn('Failed to setup GitHub authentication:', error);
     }
   }
 
@@ -36,10 +116,11 @@ export class GitOps {
       }
       
       await this.ensureGitConfig();
+      await this.ensureRemoteRepository();
       
       return {
         success: true,
-        message: 'Git repository ready'
+        message: 'Git repository ready with remote configured'
       };
     } catch (error) {
       return {
@@ -53,6 +134,7 @@ export class GitOps {
   static async commitAndPush(options: CommitOptions): Promise<GitResult> {
     try {
       await this.ensureGitConfig();
+      await this.ensureRemoteRepository();
       
       // Add all changes in data directory
       await git.add('./data/*');
@@ -70,11 +152,22 @@ export class GitOps {
       const commitMessage = `${options.message}\n\nAuthor: ${options.author}`;
       await git.commit(commitMessage);
       
-      // Push to remote if configured
+      // Push to remote
       try {
         const remotes = await git.getRemotes(true);
         if (remotes.length > 0) {
-          await git.push();
+          // Set upstream branch if it doesn't exist
+          try {
+            await git.push();
+          } catch (pushError) {
+            // If push fails due to no upstream, set it up
+            if (pushError instanceof Error && pushError.message.includes('upstream branch')) {
+              console.log('Setting upstream branch...');
+              await git.push(['--set-upstream', 'origin', 'main']);
+            } else {
+              throw pushError;
+            }
+          }
           console.log('Changes pushed to remote repository');
         } else {
           console.log('No remote repository configured, commit saved locally');
@@ -86,7 +179,7 @@ export class GitOps {
       
       return {
         success: true,
-        message: `Successfully committed: ${options.message}`
+        message: `Successfully committed and pushed: ${options.message}`
       };
     } catch (error) {
       return {

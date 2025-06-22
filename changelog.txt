@@ -1,5 +1,94 @@
 # OZ CMS 2.0 Changelog
 
+## 2024-12-19 17:00 - GitHub Token Authentication Implementation
+- **ADDED**: GitHub token authentication support for private repositories
+  - Updated GitOps class to use GITHUB_TOKEN environment variable
+  - Automatic detection and configuration of GitHub repositories
+  - Converts SSH URLs to HTTPS with token authentication
+  - Enhanced error handling and logging for authentication setup
+- **UPDATED**: Environment variable documentation in README.md
+  - Added GITHUB_TOKEN to Cloudflare Pages deployment instructions
+  - Updated .env.local example with GitHub token configuration
+- **FEATURE**: Seamless authentication for private GitHub repositories
+  - Supports both HTTPS and SSH GitHub URLs
+  - Automatic remote URL reconfiguration with token
+  - Graceful fallback when token is not provided
+- **REASON**: User has GITHUB_TOKEN secret configured in Google Cloud
+  - Need to use the same token in Cloudflare Pages environment
+  - Enables authenticated Git operations for private repositories
+  - Required for pushing commits from deployed application
+
+## 2024-01-19 - Google Cloud Run Deployment Ready
+
+### Added
+- **Docker Configuration**: Created production-ready Dockerfile with:
+  - Node.js 18 Alpine base for minimal image size
+  - Git support for repository operations
+  - Non-root user for security
+  - Optimized layer caching for faster builds
+- **Cloud Run Deployment Script**: `deploy.sh` for one-command deployment
+  - Automated Docker build and push
+  - Cloud Run service configuration
+  - Environment variable setup instructions
+  - Resource allocation (1 CPU, 1Gi memory)
+- **Docker Optimization**: `.dockerignore` file to reduce build context
+- **Next.js Production Config**: Standalone output for optimal Cloud Run performance
+
+### Deployment Instructions
+1. Set your GCP project: `gcloud config set project YOUR_PROJECT_ID`
+2. Enable required APIs: `gcloud services enable run.googleapis.com cloudbuild.googleapis.com`
+3. Run deployment: `./deploy.sh YOUR_PROJECT_ID`
+
+### Production Features
+- **Automatic scaling**: 0-10 instances based on traffic
+- **Git functionality**: Full commit/push capabilities in cloud environment
+- **Security**: Non-root container execution
+- **Performance**: Optimized standalone Next.js build
+- **Cost-effective**: Pay-per-request pricing with Cloud Run
+
+## 2024-01-19 - Git-Powered Backend Implementation
+
+### Added
+- **Git Operations Library**: Created `src/lib/gitOps.ts` with full Git integration
+  - Automatic Git repo initialization
+  - Commit and push functionality with proper error handling
+  - Rollback capability using `git revert`
+  - Git status and history tracking
+  - Configurable Git user settings via environment variables
+- **Publish API Endpoint**: `POST /api/publish` for committing changes to Git and pushing to remote
+- **Rollback API Endpoint**: `POST /api/rollback` for reverting the last commit
+- **Git Status API**: `GET /api/git/status` for repository status and commit history
+- **Git Controls UI Component**: Interactive component for publishing and rollback operations
+- **Enhanced Demo Interface**: Updated main page with Git workflow demonstration
+- **Dependencies**: Added `simple-git` and `dotenv` for Git operations
+- **Real File Editor**: Replaced simulation with actual file saving and Git commits
+
+### Architecture Integration
+- **Implemented within Next.js**: Used existing API routes instead of separate Express server
+- **Bearer Token Authentication**: Optional API protection via environment variables
+- **File-based Storage + Git**: Combines JSON file persistence with Git version control
+- **Google Cloud Ready**: Designed for deployment on persistent cloud infrastructure
+
+### Features Implemented from Backend Spec
+- ✅ **Content CRUD**: Full content management with Git integration
+- ✅ **Publish Workflow**: Commit + push to GitHub with custom messages
+- ✅ **Rollback System**: One-click revert with automatic push
+- ✅ **Version Control**: Complete Git history tracking
+- ✅ **Authentication**: Bearer token protection for write operations
+- ✅ **Auto-Deploy Ready**: Changes trigger site rebuilds via Git hooks
+
+### Environment Variables Added
+- `API_TOKEN`: Bearer token for API authentication
+- `GIT_USER_NAME`: Git commit author name
+- `GIT_USER_EMAIL`: Git commit author email
+
+### Technical Notes
+- Git repository auto-initializes on first use
+- Graceful fallback when remote repository not configured
+- Commit messages include author attribution
+- Error handling for network issues and Git failures
+- **TESTED LIVE**: Successfully commits and pushes to GitHub
+
 ## 2024-01-19 - TypeScript Compilation Fixed
 
 ### Fixed
@@ -52,7 +141,98 @@
 ### Next Steps
 - ✅ Install dependencies and test local development
 - ✅ Fix TypeScript compilation errors
-- Test the ApprovalDetailModal component in browser
-- Deploy to Vercel for live testing
-- Add additional API routes for individual content item operations
-- Expand the demo with more interactive features 
+- ✅ Implement Git-based backend functionality
+- ✅ Test the complete Git workflow in browser
+- ✅ Create Docker deployment for Google Cloud Run
+- Deploy to Google Cloud Run for live testing
+- Add Git remote repository configuration for auto-deploy
+- Test production environment with real Git operations
+
+## 2024-12-19 16:45 - Cloudflare Pages Deployment Configuration
+- **CHANGE**: Updated Next.js config for Cloudflare Pages compatibility
+  - Removed `output: 'standalone'` configuration (was for Docker/Cloud Run)
+  - Cloudflare Pages will handle Next.js deployment automatically
+- **DOCUMENTATION**: Updated README.md with Cloudflare Pages deployment instructions
+  - Added specific build settings: Framework preset = Next.js, empty build command/output
+  - Documented environment variables needed for Cloudflare Pages
+  - Made Cloudflare Pages the recommended deployment method
+- **REASON**: User is deploying to Cloudflare Pages instead of Google Cloud Run
+  - Cloudflare Pages has native Next.js support with serverless functions
+  - More cost-effective and simpler than containerized deployment
+  - Better suited for Git-powered CMS workflow
+
+## 2024-12-19 15:30 - Docker Space Optimization and Build Fixes
+- **FIX**: Resolved Docker build failure due to insufficient disk space
+  - Cleaned up Docker system, freed 25.24GB of space
+  - Optimized Dockerfile to use `--omit=dev` and clean npm cache in same layer
+- **FIX**: Corrected Next.js config warning about deprecated experimental.outputStandalone
+  - Updated to use `output: 'standalone'` instead of experimental config
+  - Maintained Docker/Cloud Run compatibility
+- **VERIFICATION**: Confirmed 30GB available disk space for builds
+- **STATUS**: Docker build and Google Cloud Run deployment ready
+
+## 2024-12-19 14:15 - Real Git Integration Success
+- **SUCCESS**: Completed transition from simulated to real Git operations
+- **IMPLEMENTATION**: Created commit-push-editor.tsx as simple test interface
+  - Real API calls to save files and commit to Git
+  - Successfully tested live Git operations
+- **FIX**: Resolved upstream branch issue with `git push --set-upstream origin main`
+- **VERIFICATION**: Confirmed real Git commits and pushes to GitHub repository
+  - Repository: git@github.com:eir-dev/oz-cms2.git
+  - All operations working: save files, commit, push to remote
+- **IMPACT**: CMS now has full Git-powered functionality
+
+## 2024-12-19 13:00 - Docker and Cloud Run Deployment Setup
+- **CREATED**: Production-ready Dockerfile with Node.js 18 Alpine base
+  - Added Git support for repository operations
+  - Implemented non-root user for security (nextjs:nodejs)
+  - Optimized for Cloud Run with proper port configuration
+- **CREATED**: deploy.sh script for one-command Google Cloud Run deployment
+  - Automated Docker build, push, and Cloud Run deployment
+  - Environment variable configuration for production
+- **UPDATED**: Next.js config for standalone output optimized for Cloud Run
+  - Added .dockerignore for optimized builds
+- **ENVIRONMENT**: Set up required variables: API_TOKEN, GIT_USER_NAME, GIT_USER_EMAIL
+
+## 2024-12-19 12:00 - Git-Powered Backend Implementation  
+- **CREATED**: GitOps class in src/lib/gitOps.ts with full Git functionality
+  - Git repository initialization and configuration
+  - Commit and push functionality with comprehensive error handling
+  - Rollback capability using git revert operations  
+  - Git status and history tracking
+- **CREATED**: Complete API routes for Git operations:
+  - src/pages/api/content/index.ts - Content CRUD operations
+  - src/pages/api/publish.ts - Git commit and push to remote
+  - src/pages/api/rollback.ts - Git revert operations  
+  - src/pages/api/git/status.ts - Repository status and history
+- **ADDED**: Dependencies: simple-git (^3.19.1) and dotenv (^16.3.1)
+- **CREATED**: GitControls component for UI interaction with Git operations
+- **ARCHITECTURE**: Implemented within Next.js instead of separate Express server per user request
+
+## 2024-12-19 10:30 - TypeScript Compilation Fixes
+- **FIX**: Resolved all TypeScript compilation errors in approval-detail-modal.tsx
+  - Added proper interfaces: Comment, EditData, ApprovalDetailModalProps
+  - Fixed function parameter types: type, dateString, action, jsonString  
+  - Implemented null safety with optional chaining and proper null checks
+  - Fixed event handler typing issues with React.SyntheticEvent
+  - Converted actionLoading to boolean for disabled prop compatibility
+- **VERIFICATION**: Confirmed successful TypeScript compilation with no errors
+- **IMPACT**: Development server now runs without TypeScript warnings
+
+## 2024-12-19 09:00 - Initial Next.js Project Setup
+- **CREATED**: Complete Next.js 14 project structure with TypeScript
+  - Configured package.json with all necessary dependencies
+  - Set up Tailwind CSS with custom configuration  
+  - Added PostCSS and TypeScript configurations
+  - Created proper .gitignore for Next.js development
+- **MIGRATED**: approval-detail-modal.tsx to src/components/ directory
+  - Preserved all 579 lines of existing functionality
+  - Maintained comprehensive approval workflow features
+  - Kept diff viewing for all content types (Markdown, HTML, JSON, Images)
+- **DEPENDENCIES**: Added Lucide React for icons, maintained existing component functionality
+- **GOAL**: Build web service around existing component for Google Cloud Run deployment
+
+## Project Initialization
+- **STARTED**: Git-powered CMS project with approval workflow system
+- **COMPONENT**: approval-detail-modal.tsx with comprehensive content review capabilities
+- **TARGET**: Web service deployment on Google Cloud Run with Git-powered backend 
