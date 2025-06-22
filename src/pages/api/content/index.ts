@@ -1,4 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from 'next/api'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { join } from 'path'
 

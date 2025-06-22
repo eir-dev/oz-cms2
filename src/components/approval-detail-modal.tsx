@@ -1,19 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import { X, FileText, Calendar, User, MessageSquare, Check, AlertTriangle, XCircle, Send } from 'lucide-react';
 
-const ApprovalDetailModal = ({ 
+interface Comment {
+  id: string;
+  author: string;
+  content: string;
+  timestamp: string;
+}
+
+interface EditData {
+  id: string;
+  title: string;
+  type: string;
+  targetLocation: string;
+  submittedBy: string;
+  submittedDate: string;
+  status: string;
+  tags: string[];
+  currentContent: string;
+  proposedContent: string;
+  comments: Comment[];
+}
+
+interface ApprovalDetailModalProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+  editId?: string;
+}
+
+const ApprovalDetailModal: React.FC<ApprovalDetailModalProps> = ({ 
   isOpen = true, 
   onClose = () => {}, 
   editId = "edit-123" 
 }) => {
-  const [editData, setEditData] = useState(null);
+  const [editData, setEditData] = useState<EditData | null>(null);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
-  const [actionLoading, setActionLoading] = useState(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Mock data - in real app this would be fetched from API
-  const mockEditData = {
+  const mockEditData: EditData = {
     id: editId,
     title: "Homepage Hero Section",
     type: "Markdown", // Can be: Markdown, HTML, JSON, Image
@@ -54,7 +81,7 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
   };
 
   // Different mock data based on content type for demo
-  const getContentByType = (type) => {
+  const getContentByType = (type: string) => {
     switch (type) {
       case 'HTML':
         return {
@@ -135,7 +162,7 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
     }
   }, [isOpen, editId]);
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -145,7 +172,7 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
     });
   };
 
-  const handleAction = async (action, comment = '') => {
+  const handleAction = async (action: string, comment = '') => {
     setActionLoading(action);
     
     // Simulate API call
@@ -157,24 +184,27 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
   };
 
   const handleCommentSubmit = async () => {
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || !editData) return;
     
     setSubmittingComment(true);
     
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    const newCommentObj = {
+    const newCommentObj: Comment = {
       id: `c${editData.comments.length + 1}`,
       author: "Current User",
       content: newComment,
       timestamp: new Date().toISOString()
     };
     
-    setEditData(prev => ({
-      ...prev,
-      comments: [...prev.comments, newCommentObj]
-    }));
+    setEditData(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        comments: [...prev.comments, newCommentObj]
+      };
+    });
     
     setNewComment('');
     setSubmittingComment(false);
@@ -196,8 +226,8 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
                 src={editData.currentContent} 
                 alt="Current version" 
                 className="w-full h-auto rounded-lg border border-red-200 dark:border-red-700"
-                onError={(e) => {
-                  e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDgwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zOTkuNSAyMDBMMzUwIDI1MEg0NDlMMzk5LjUgMjAwWiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNMzUwIDI1MEgzMDBWMzAwSDUwMFYyNTBINDQ5TDM1MCAyNTBaIiBmaWxsPSIjOUNBM0FGIi8+Cjx0ZXh0IHg9IjQwMCIgeT0iMzMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2QjcyODAiPkltYWdlIG5vdCBmb3VuZDwvdGV4dD4KPHN2Zz4K';
+                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                  e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDgwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zOTkuNSAyMDBMMzUwIDI1MEg0NDlMMzk5LjUgMjAwWiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNMzUwIDI1MEgzMDBWMzAwSDUwMFYyNTBINDQ5TDM1MCAyNTBaIiBmaWxsPSIjOUNBM0FGIi8+Cjx0ZXh0IHg9IjQwMCIgeT0iMzMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2QjcyODAiPkltYWdlIG5vdCBmb3VuZDwvdGV4dD4KPHN2Zz4K';
                 }}
               />
             </div>
@@ -212,8 +242,8 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
                 src={editData.proposedContent} 
                 alt="Proposed version" 
                 className="w-full h-auto rounded-lg border border-green-200 dark:border-green-700"
-                onError={(e) => {
-                  e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDgwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjRkNGREZFIi8+CjxwYXRoIGQ9Ik0zOTkuNSAyMDBMMzUwIDI1MEg0NDlMMzk5LjUgMjAwWiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNMzUwIDI1MEgzMDBWMzAwSDUwMFYyNTBINDQ5TDM1MCAyNTBaIiBmaWxsPSIjOUNBM0FGIi8+Cjx0ZXh0IHg9IjQwMCIgeT0iMzMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2QjcyODAiPlByb3Bvc2VkIGltYWdlIG5vdCBmb3VuZDwvdGV4dD4KPHN2Zz4K';
+                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                  e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDgwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjRkNGREZFIi8+CjxwYXRoIGQ9Ik0zOTkuNSAyMDBMMzUwIDI1MEg0NDlMMzk5LjUgMjAwWiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNMzUwIDI1MEgzMDBWMzAwSDUwMFYyNTBINDQ5TDM1MCAyNTBaIiBmaWxsPSIjOUNBM0FGIi8+Cjx0ZXh0IHg9IjQwMCIgeT0iMzMwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2QjcyODAiPlByb3Bvc2VkIGltYWdlIG5vdCBmb3VuZDwvdGV4dD4KPHN2Zz4K';
                 }}
               />
             </div>
@@ -289,7 +319,7 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
 
     // Handle JSON with formatting
     if (editData.type === 'JSON') {
-      const formatJson = (jsonString) => {
+      const formatJson = (jsonString: string) => {
         try {
           return JSON.stringify(JSON.parse(jsonString), null, 2);
         } catch {
@@ -396,9 +426,11 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                     Approve Content Update
                   </h2>
+                  {editData && (
                   <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
                     Submitted by {editData.submittedBy} on {formatDate(editData.submittedDate)}
                   </p>
+                  )}
                 </div>
                 <button
                   onClick={onClose}
@@ -412,6 +444,7 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
             <div className="flex-1 overflow-y-auto max-h-[calc(95vh-200px)]">
               <div className="p-4 sm:p-6 space-y-6">
                 {/* Edit Metadata Panel */}
+                {editData && (
                 <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 sm:p-6">
                   <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                     <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
@@ -460,6 +493,7 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
                     </div>
                   </div>
                 </div>
+                )}
 
                 {/* Diff Viewer */}
                 <div>
@@ -470,6 +504,7 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
                 </div>
 
                 {/* Comment Section */}
+                {editData && (
                 <div>
                   <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                     <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
@@ -521,16 +556,17 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
                     </div>
                   </div>
                 </div>
+                )}
               </div>
             </div>
 
             {/* Action Buttons */}
-            {editData.status === 'pending' && (
+            {editData?.status === 'pending' && (
               <div className="border-t border-gray-200 dark:border-gray-700 p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row justify-end gap-3">
                   <button
                     onClick={() => handleAction('reject')}
-                    disabled={actionLoading}
+                    disabled={!!actionLoading}
                     className="px-4 sm:px-6 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
                   >
                     {actionLoading === 'reject' ? (
@@ -543,7 +579,7 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
                   
                   <button
                     onClick={() => handleAction('request-changes')}
-                    disabled={actionLoading}
+                    disabled={!!actionLoading}
                     className="px-4 sm:px-6 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400 text-white rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
                   >
                     {actionLoading === 'request-changes' ? (
@@ -556,7 +592,7 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
                   
                   <button
                     onClick={() => handleAction('approve')}
-                    disabled={actionLoading}
+                    disabled={!!actionLoading}
                     className="px-4 sm:px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
                   >
                     {actionLoading === 'approve' ? (
