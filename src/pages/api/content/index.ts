@@ -1,13 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
-import { join } from 'path'
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
+import { join, dirname } from 'path'
 
 const DATA_FILE = join(process.cwd(), 'data', 'content.json')
+const PUBLIC_DIR = join(process.cwd(), 'public')
 
 interface ContentItem {
   id: string
   title: string
-  type: 'Markdown' | 'HTML' | 'JSON' | 'Image'
+  type: 'Markdown' | 'HTML' | 'JSON' | 'Image' | 'Text'
   targetLocation: string
   submittedBy: string
   submittedDate: string
@@ -21,6 +22,27 @@ interface ContentItem {
     content: string
     timestamp: string
   }>
+}
+
+function writeStaticFile(targetLocation: string, content: string): void {
+  try {
+    // Remove leading slash and ensure it's under public/
+    const cleanPath = targetLocation.startsWith('/') ? targetLocation.slice(1) : targetLocation;
+    const fullPath = join(PUBLIC_DIR, cleanPath);
+    const dir = dirname(fullPath);
+    
+    // Create directory if it doesn't exist
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+    
+    // Write the content file
+    writeFileSync(fullPath, content, 'utf8');
+    console.log(`Static file written: ${fullPath}`);
+  } catch (error) {
+    console.error('Error writing static file:', error);
+    throw new Error('Failed to write static file');
+  }
 }
 
 function readContentData(): ContentItem[] {
@@ -38,6 +60,12 @@ function readContentData(): ContentItem[] {
 
 function writeContentData(data: ContentItem[]): void {
   try {
+    // Ensure data directory exists
+    const dataDir = dirname(DATA_FILE);
+    if (!existsSync(dataDir)) {
+      mkdirSync(dataDir, { recursive: true });
+    }
+    
     writeFileSync(DATA_FILE, JSON.stringify(data, null, 2))
   } catch (error) {
     console.error('Error writing content data:', error)
@@ -70,11 +98,14 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
         return res.status(400).json({ error: 'Missing required fields' })
       }
 
+      // Write the static file to public directory
+      writeStaticFile(targetLocation, proposedContent);
+
       const content = readContentData()
       const newItem: ContentItem = {
         id: `edit-${Date.now()}`,
         title,
-        type,
+        type: type as ContentItem['type'],
         targetLocation,
         submittedBy,
         submittedDate: new Date().toISOString(),
@@ -88,8 +119,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       content.push(newItem)
       writeContentData(content)
       
-      res.status(201).json(newItem)
+      res.status(201).json({
+        ...newItem,
+        staticFileWritten: true,
+        publicPath: targetLocation
+      })
     } catch (error) {
+      console.error('Content creation error:', error);
       res.status(500).json({ error: 'Failed to create content' })
     }
   } else {

@@ -3,6 +3,10 @@ import { join } from 'path';
 
 const git: SimpleGit = simpleGit(process.cwd());
 
+// Static repository configuration
+const REPO_URL = 'https://github.com/eir-dev/oz-cms2.git';
+const REPO_URL_WITH_TOKEN = (token: string) => `https://${token}@github.com/eir-dev/oz-cms2.git`;
+
 interface CommitOptions {
   message: string;
   author: string;
@@ -26,8 +30,6 @@ export class GitOps {
       // Configure GitHub token authentication if available
       const githubToken = process.env.GITHUB_TOKEN;
       if (githubToken) {
-        // Set up credential helper for GitHub authentication
-        await git.addConfig('credential.helper', 'store --file=.git-credentials');
         console.log('GitHub token authentication configured');
       }
     } catch (error) {
@@ -39,71 +41,26 @@ export class GitOps {
     try {
       const remotes = await git.getRemotes(true);
       const origin = remotes.find(remote => remote.name === 'origin');
+      const githubToken = process.env.GITHUB_TOKEN;
       
       if (!origin) {
-        // No remote configured, set up the default GitHub repository
-        const githubToken = process.env.GITHUB_TOKEN;
-        const repoUrl = githubToken 
-          ? `https://${githubToken}@github.com/eir-dev/oz-cms2.git`
-          : 'https://github.com/eir-dev/oz-cms2.git';
-        
+        // No remote configured, set up the repository with or without token
+        const repoUrl = githubToken ? REPO_URL_WITH_TOKEN(githubToken) : REPO_URL;
         await git.addRemote('origin', repoUrl);
-        console.log('Configured remote repository:', 'https://github.com/eir-dev/oz-cms2.git');
+        console.log('Configured remote repository:', REPO_URL);
       } else {
-        console.log('Remote repository already configured:', origin.refs.fetch);
-        // Update existing remote with token if available
-        await this.setupGitHubAuth();
+        // Remote exists, update it with token if available
+        if (githubToken) {
+          await git.remote(['set-url', 'origin', REPO_URL_WITH_TOKEN(githubToken)]);
+          console.log('Updated remote with authentication');
+        } else {
+          // Ensure it's set to the static URL
+          await git.remote(['set-url', 'origin', REPO_URL]);
+          console.log('Remote repository configured:', REPO_URL);
+        }
       }
     } catch (error) {
       console.warn('Failed to configure remote repository:', error);
-    }
-  }
-
-  private static async setupGitHubAuth(): Promise<void> {
-    const githubToken = process.env.GITHUB_TOKEN;
-    if (!githubToken) {
-      console.log('No GitHub token provided, using default Git configuration');
-      return;
-    }
-
-    try {
-      // Get the remote URL to determine if it's a GitHub repository
-      const remotes = await git.getRemotes(true);
-      if (remotes.length === 0) {
-        console.log('No remote repository configured');
-        return;
-      }
-
-      const origin = remotes.find(remote => remote.name === 'origin');
-      if (!origin) {
-        console.log('No origin remote found');
-        return;
-      }
-
-      // If it's a GitHub repository, set up token authentication
-      if (origin.refs.fetch.includes('github.com')) {
-        // Configure the remote URL with token authentication
-        const repoUrl = origin.refs.fetch;
-        let authenticatedUrl: string;
-
-        if (repoUrl.startsWith('https://github.com/')) {
-          // HTTPS URL - add token
-          authenticatedUrl = repoUrl.replace('https://github.com/', `https://${githubToken}@github.com/`);
-        } else if (repoUrl.startsWith('git@github.com:')) {
-          // SSH URL - convert to HTTPS with token
-          const repoPath = repoUrl.replace('git@github.com:', '').replace('.git', '');
-          authenticatedUrl = `https://${githubToken}@github.com/${repoPath}.git`;
-        } else {
-          console.log('Unknown GitHub URL format:', repoUrl);
-          return;
-        }
-
-        // Update the remote URL with authentication
-        await git.remote(['set-url', 'origin', authenticatedUrl]);
-        console.log('GitHub authentication configured for remote repository');
-      }
-    } catch (error) {
-      console.warn('Failed to setup GitHub authentication:', error);
     }
   }
 
@@ -136,8 +93,8 @@ export class GitOps {
       await this.ensureGitConfig();
       await this.ensureRemoteRepository();
       
-      // Add all changes in data directory
-      await git.add('./data/*');
+      // Add all changes in both data directory and public content
+      await git.add(['./data/*', './public/*']);
       
       // Check if there are any changes to commit
       const status = await git.status();
@@ -156,12 +113,20 @@ export class GitOps {
       try {
         const remotes = await git.getRemotes(true);
         if (remotes.length > 0) {
-          // Set upstream branch if it doesn't exist
+          // Check if main branch exists on remote
+          try {
+            await git.fetch('origin', 'main');
+          } catch (fetchError) {
+            // Main branch doesn't exist on remote, create it
+            console.log('Creating main branch on remote...');
+          }
+          
+          // Try to push, set upstream if needed
           try {
             await git.push();
           } catch (pushError) {
             // If push fails due to no upstream, set it up
-            if (pushError instanceof Error && pushError.message.includes('upstream branch')) {
+            if (pushError instanceof Error && pushError.message.includes('upstream') || pushError.message.includes('refspec')) {
               console.log('Setting upstream branch...');
               await git.push(['--set-upstream', 'origin', 'main']);
             } else {
@@ -174,7 +139,10 @@ export class GitOps {
         }
       } catch (pushError) {
         console.warn('Push failed, but commit was successful:', pushError);
-        // Don't fail the entire operation if push fails
+        return {
+          success: true,
+          message: `Committed successfully, but push failed: ${pushError instanceof Error ? pushError.message : 'Unknown error'}`
+        };
       }
       
       return {
@@ -193,6 +161,7 @@ export class GitOps {
   static async rollback(): Promise<GitResult> {
     try {
       await this.ensureGitConfig();
+      await this.ensureRemoteRepository();
       
       // Get the latest commit
       const log = await git.log(['--max-count=1']);
@@ -215,14 +184,6 @@ export class GitOps {
       } catch (pushError) {
         console.warn('Push failed after revert:', pushError);
       }
-      
-      // Log the rollback
-      const rollbackEntry = {
-        timestamp: new Date().toISOString(),
-        action: 'rollback',
-        previousCommit: log.latest?.hash,
-        previousMessage: log.latest?.message
-      };
       
       return {
         success: true,

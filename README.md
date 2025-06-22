@@ -87,7 +87,8 @@ src/
 - **Styling:** Tailwind CSS
 - **Icons:** Lucide React
 - **Git Operations:** Simple Git
-- **Deployment:** Cloudflare Pages / Google Cloud Run
+- **CMS Deployment:** Google Cloud Run
+- **Static Site:** Cloudflare Pages (auto-deployed from GitHub)
 
 ## Git Integration
 

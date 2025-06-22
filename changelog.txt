@@ -1,5 +1,23 @@
 # OZ CMS 2.0 Changelog
 
+## 2024-12-19 17:30 - Auto-Configure Git Remote Repository
+- **FIX**: Resolved "No remote repository configured" issue in Cloud Run deployment
+  - Added `ensureRemoteRepository()` method to automatically configure GitHub remote
+  - Auto-detects if remote is missing and sets up `origin` pointing to eir-dev/oz-cms2
+  - Automatically handles HTTPS authentication with GitHub token
+  - Fixes upstream branch configuration with `--set-upstream origin main`
+- **IMPROVED**: Better error handling for Git push operations
+  - Automatically sets upstream branch when needed
+  - More descriptive logging for Git operations
+  - Graceful fallback when push operations encounter issues
+- **ARCHITECTURE**: Clarified deployment model in README
+  - CMS runs on Google Cloud Run and pushes to GitHub
+  - Static site auto-deploys from GitHub to Cloudflare Pages
+  - Clean separation between dynamic CMS and static site hosting
+- **REASON**: Docker containers start fresh without Git remote configuration
+  - Container needs to programmatically set up the remote repository
+  - Ensures Git operations work properly in deployed environment
+
 ## 2024-12-19 17:00 - GitHub Token Authentication Implementation
 - **ADDED**: GitHub token authentication support for private repositories
   - Updated GitOps class to use GITHUB_TOKEN environment variable
