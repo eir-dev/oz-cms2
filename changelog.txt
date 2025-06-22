@@ -1,5 +1,36 @@
 # OZ CMS 2.0 Changelog
 
+## 2024-12-19 18:00 - Static Content File Writing System
+- **MAJOR**: Implemented actual static file writing for Cloudflare Pages
+  - Content API now writes files to `public/` directory when content is created
+  - Static files get committed to Git alongside metadata
+  - Cloudflare Pages can now serve the actual content files
+- **CREATED**: `public/content/` directory structure for static files
+  - Files written with proper directory structure based on `targetLocation`
+  - Automatic directory creation for nested paths
+  - UTF-8 encoding for all content types
+- **ENHANCED**: Git operations to include public files in commits
+  - Updated `commitAndPush()` to add both `./data/*` and `./public/*`
+  - Static content changes now trigger Git commits
+  - Complete workflow: CMS → File Write → Git Commit → GitHub → Cloudflare Pages
+- **REASON**: Previous system only saved metadata, not actual content files
+  - Cloudflare Pages needs static files to serve
+  - Enables true headless CMS functionality with static site generation
+
+## 2024-12-19 17:45 - Fixed Git Authentication and Repository URL
+- **FIX**: Resolved Git authentication issues and token exposure in logs
+  - Made repository URL static: `https://github.com/eir-dev/oz-cms2.git`
+  - Fixed token handling to prevent exposure in console logs
+  - Simplified remote URL configuration logic
+- **IMPROVED**: Main branch handling for new repositories
+  - Better error detection for missing upstream branch
+  - Automatic upstream setup with `--set-upstream origin main`
+  - Handles both existing and new repository scenarios
+- **SECURITY**: Removed token from log output to prevent credential exposure
+- **REASON**: Complex URL manipulation was causing authentication failures
+  - Token was being logged in plain text (security issue)
+  - "refspec main does not match any" errors on new repositories
+
 ## 2024-12-19 17:30 - Auto-Configure Git Remote Repository
 - **FIX**: Resolved "No remote repository configured" issue in Cloud Run deployment
   - Added `ensureRemoteRepository()` method to automatically configure GitHub remote

@@ -46,7 +46,25 @@ Your static site is automatically deployed from GitHub to Cloudflare Pages:
 ### Architecture Flow
 
 ```
-CMS (Cloud Run) → Git Push → GitHub → Cloudflare Pages (Static Site)
+CMS (Cloud Run) → Writes Static Files → Git Push → GitHub → Cloudflare Pages (Static Site)
+```
+
+### Content Flow:
+1. **Create Content** via CMS interface
+2. **API writes files** to `public/` directory
+3. **Git commits** both metadata and static files
+4. **GitHub receives** the push
+5. **Cloudflare Pages** auto-deploys static content
+
+### File Structure:
+```
+public/
+└── content/           # Static files served by Cloudflare Pages
+    ├── example.md
+    ├── posts/
+    └── pages/
+data/
+└── content.json       # CMS metadata (not served publicly)
 ```
 
 ## Environment Variables
