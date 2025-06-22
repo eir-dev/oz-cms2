@@ -1,0 +1,156 @@
+Great — here’s a minimal single-page React UI flow to test your file-editing + commit/push backend. It’s deliberately simple but makes the Git commit/push language visible, so your users know they’re not just editing a CMS — they’re shipping code.
+
+⸻
+
+🎯 UI Purpose: “Edit a File & Push to GitHub”
+
+Goals:
+	•	Allow user to enter a filename + content
+	•	On submit: save file via POST /content
+	•	Immediately trigger POST /publish
+	•	UI shows: file saved, committed, and pushed
+
+⸻
+
+🧱 Suggested Page: CommitPushTestPage.tsx
+
+UI Layout:
+
+┌─────────────────────────────────────────────┐
+│       🚀 Commit + Push Editor               │
+├─────────────────────────────────────────────┤
+│ File name: [homepage.txt         ]          │
+│                                             │
+│ [Textarea — file content]                   │
+│                                             │
+│ Commit message: [Add homepage copy]         │
+│ Author:         [chloe@example.com]         │
+│                                             │
+│ [Commit & Push]                             │
+├─────────────────────────────────────────────┤
+│ ✅ File saved as data/content/homepage.txt  │
+│ ✅ Committed to Git repo                    │
+│ ✅ Pushed to GitHub                         │
+└─────────────────────────────────────────────┘
+
+
+⸻
+
+📄 Cursor-Style Component Spec: CommitPushTestPage.tsx
+
+// File: src/pages/CommitPushTestPage.tsx
+
+import React, { useState } from 'react'
+
+export default function CommitPushTestPage() {
+  const [filename, setFilename] = useState('test.txt')
+  const [content, setContent] = useState('')
+  const [commitMessage, setCommitMessage] = useState('Initial commit')
+  const [author, setAuthor] = useState('dev@eir.inc')
+  const [status, setStatus] = useState<string[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async () => {
+    setLoading(true)
+    setStatus([])
+    try {
+      const res = await fetch('/api/content', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer supersecret123',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          filename,
+          content
+        })
+      })
+      if (res.ok) setStatus(prev => [...prev, `✅ File saved as data/content/${filename}`])
+
+      const pushRes = await fetch('/api/publish', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer supersecret123',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: commitMessage,
+          author
+        })
+      })
+      if (pushRes.ok) {
+        setStatus(prev => [...prev, '✅ Committed to Git repo', '✅ Pushed to GitHub'])
+      } else {
+        setStatus(prev => [...prev, '❌ Push failed'])
+      }
+    } catch (err) {
+      setStatus(prev => [...prev, '❌ Error: ' + err])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="max-w-xl mx-auto mt-12 p-4 border rounded-xl shadow-lg">
+      <h1 className="text-xl font-bold mb-4">🚀 Commit + Push Editor</h1>
+      <label>Filename</label>
+      <input value={filename} onChange={e => setFilename(e.target.value)} className="w-full border p-1 mb-2" />
+      <label>File Content</label>
+      <textarea value={content} onChange={e => setContent(e.target.value)} className="w-full border p-2 h-40 mb-2" />
+      <label>Commit Message</label>
+      <input value={commitMessage} onChange={e => setCommitMessage(e.target.value)} className="w-full border p-1 mb-2" />
+      <label>Author Email</label>
+      <input value={author} onChange={e => setAuthor(e.target.value)} className="w-full border p-1 mb-4" />
+
+      <button
+        onClick={handleSubmit}
+        disabled={loading}
+        className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
+      >
+        {loading ? 'Pushing...' : 'Commit & Push'}
+      </button>
+
+      <div className="mt-4 text-sm space-y-1">
+        {status.map((msg, i) => (
+          <div key={i}>{msg}</div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+
+⸻
+
+🧪 Local API Routes You’ll Need
+
+POST /api/content
+
+// Saves file to ./data/content/[filename]
+req.body = {
+  filename: "test.txt",
+  content: "Hello world"
+}
+
+POST /api/publish
+
+req.body = {
+  message: "Add homepage copy",
+  author: "chloe@example.com"
+}
+
+
+⸻
+
+🪄 Bonus Add-ons You Can Try
+
+Idea	How to Extend
+Add file type auto-detection	.txt, .md, .json suffix UI hints
+Limit file size	client-side validation + backend
+Show commit SHA	capture response from gitOps.commit()
+GitHub preview link	https://github.com/you/repo/commit/<sha>
+
+
+⸻
+
+Would you like this included in your starter repo scaffold, or should I generate the two backend API route handlers (content.js, publish.js) to match this UI next?
