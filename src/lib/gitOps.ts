@@ -126,7 +126,7 @@ export class GitOps {
             await git.push();
           } catch (pushError) {
             // If push fails due to no upstream, set it up
-            if (pushError instanceof Error && pushError.message.includes('upstream') || pushError.message.includes('refspec')) {
+            if (pushError instanceof Error && (pushError.message.includes('upstream') || pushError.message.includes('refspec'))) {
               console.log('Setting upstream branch...');
               await git.push(['--set-upstream', 'origin', 'main']);
             } else {

@@ -38,6 +38,18 @@ const ApprovalDetailModal: React.FC<ApprovalDetailModalProps> = ({
   const [newComment, setNewComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  
+  // Form fields for editing
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    type: 'Markdown',
+    targetLocation: '',
+    proposedContent: '',
+    tags: [] as string[]
+  });
+
+  const isCreatingNew = editId === 'new';
 
   // Mock data - in real app this would be fetched from API
   const mockEditData: EditData = {
@@ -148,17 +160,74 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
 
   useEffect(() => {
     if (isOpen && editId) {
-      // Simulate API call
       setLoading(true);
-      setTimeout(() => {
-        const contentData = getContentByType(mockEditData.type);
-        setEditData({
-          ...mockEditData,
-          currentContent: contentData.current,
-          proposedContent: contentData.proposed
+      
+      // Handle new content creation
+      if (editId === 'new') {
+        const newContentTemplate = {
+          id: '',
+          title: '',
+          type: 'Markdown',
+          targetLocation: '',
+          submittedBy: 'Current User',
+          submittedDate: new Date().toISOString(),
+          status: 'draft',
+          tags: [],
+          currentContent: '',
+          proposedContent: '',
+          comments: []
+        };
+        setEditData(newContentTemplate);
+        setIsEditing(true); // Enable editing for new content
+        setFormData({
+          title: '',
+          type: 'Markdown',
+          targetLocation: '',
+          proposedContent: '',
+          tags: []
         });
         setLoading(false);
-      }, 500);
+        return;
+      }
+      
+      // Fetch real content data from API
+      fetch(`/api/content/${editId}`)
+        .then(response => {
+          if (response.ok) {
+            return response.json();
+          }
+          throw new Error('Failed to fetch content');
+        })
+        .then(data => {
+          setEditData(data);
+          // Initialize form data with existing content
+          setFormData({
+            title: data.title,
+            type: data.type,
+            targetLocation: data.targetLocation,
+            proposedContent: data.proposedContent,
+            tags: data.tags
+          });
+          setLoading(false);
+        })
+        .catch(error => {
+          console.error('Error fetching content:', error);
+          // Fallback to mock data if API fails
+          const contentData = getContentByType(mockEditData.type);
+          setEditData({
+            ...mockEditData,
+            currentContent: contentData.current,
+            proposedContent: contentData.proposed
+          });
+          setFormData({
+            title: mockEditData.title,
+            type: mockEditData.type,
+            targetLocation: mockEditData.targetLocation,
+            proposedContent: contentData.proposed,
+            tags: mockEditData.tags
+          });
+          setLoading(false);
+        });
     }
   }, [isOpen, editId]);
 
@@ -173,14 +242,96 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
   };
 
   const handleAction = async (action: string, comment = '') => {
+    if (!editData) return;
+    
     setActionLoading(action);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    console.log(`${action} action performed with comment:`, comment);
-    setActionLoading(null);
-    onClose();
+    try {
+      // Handle new content creation
+      if (editId === 'new') {
+        if (action === 'save' || action === 'create') {
+          const response = await fetch('/api/content', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              title: editData.title || 'Untitled',
+              type: editData.type,
+              targetLocation: editData.targetLocation || '/content/untitled.txt',
+              submittedBy: editData.submittedBy,
+              proposedContent: editData.proposedContent,
+              tags: editData.tags
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to create content');
+          }
+
+          console.log('New content created successfully');
+          setActionLoading(null);
+          onClose();
+          return;
+        }
+      }
+
+      // Handle existing content updates
+      let newStatus = editData.status;
+      
+      // Determine new status based on action
+      switch (action) {
+        case 'approve':
+          newStatus = editData.status === 'in_review' ? 'ready_for_approval' : 'published';
+          break;
+        case 'reject':
+          newStatus = 'archived';
+          break;
+        case 'request_changes':
+          newStatus = 'draft';
+          break;
+        case 'publish':
+          newStatus = 'published';
+          break;
+        default:
+          break;
+      }
+
+      // Add comment if provided
+      let updatedComments = editData.comments;
+      if (comment.trim()) {
+        const newComment = {
+          id: `c${updatedComments.length + 1}`,
+          author: 'Current User',
+          content: comment,
+          timestamp: new Date().toISOString()
+        };
+        updatedComments = [...updatedComments, newComment];
+      }
+
+      // Update content via API
+      const response = await fetch(`/api/content/${editData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus,
+          comments: updatedComments
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update content');
+      }
+
+      console.log(`${action} action completed successfully`);
+      setActionLoading(null);
+      onClose();
+    } catch (error) {
+      console.error('Error performing action:', error);
+      setActionLoading(null);
+    }
   };
 
   const handleCommentSubmit = async () => {
@@ -188,26 +339,46 @@ Transform your workflow with our cutting-edge, AI-powered solution that adapts t
     
     setSubmittingComment(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const newCommentObj: Comment = {
-      id: `c${editData.comments.length + 1}`,
-      author: "Current User",
-      content: newComment,
-      timestamp: new Date().toISOString()
-    };
-    
-    setEditData(prev => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        comments: [...prev.comments, newCommentObj]
+    try {
+      const newCommentObj = {
+        id: `c${editData.comments.length + 1}`,
+        author: "Current User",
+        content: newComment,
+        timestamp: new Date().toISOString()
       };
-    });
-    
-    setNewComment('');
-    setSubmittingComment(false);
+      
+      const updatedComments = [...editData.comments, newCommentObj];
+      
+      // Save comment via API
+      const response = await fetch(`/api/content/${editData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          comments: updatedComments
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save comment');
+      }
+      
+      // Update local state
+      setEditData(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          comments: updatedComments
+        };
+      });
+      
+      setNewComment('');
+      setSubmittingComment(false);
+    } catch (error) {
+      console.error('Error saving comment:', error);
+      setSubmittingComment(false);
+    }
   };
 
   const renderDiff = () => {
