@@ -7,7 +7,11 @@
     "submittedBy": "Sarah Chen",
     "submittedDate": "2024-01-15T10:30:00Z",
     "status": "in_review",
-    "tags": ["homepage", "hero", "marketing"],
+    "tags": [
+      "homepage",
+      "hero",
+      "marketing"
+    ],
     "currentContent": "# Welcome to Our Platform\n\nTransform your workflow with our innovative solution. \n\n[Get Started](#cta)",
     "proposedContent": "# Welcome to Our Revolutionary Platform\n\nTransform your workflow with our cutting-edge, AI-powered solution that adapts to your needs.\n\n**Key Benefits:**\n- 50% faster processing\n- Advanced analytics\n- 24/7 support\n\n[Start Free Trial](#cta)",
     "comments": [
@@ -33,7 +37,11 @@
     "submittedBy": "Alex Rivera",
     "submittedDate": "2024-01-16T09:15:00Z",
     "status": "ready_for_approval",
-    "tags": ["about", "company", "html"],
+    "tags": [
+      "about",
+      "company",
+      "html"
+    ],
     "currentContent": "<div class=\"about-section\">\n  <h1>About Our Company</h1>\n  <p>We are a growing startup focused on innovation.</p>\n  <button class=\"contact-btn\">Contact Us</button>\n</div>",
     "proposedContent": "<div class=\"about-section bg-gradient\">\n  <h1 class=\"about-title\">About Our Revolutionary Company</h1>\n  <p class=\"about-subtitle\">We are a leading technology company pioneering the future of digital transformation.</p>\n  <div class=\"stats-grid\">\n    <div class=\"stat\">\n      <h3>500+</h3>\n      <p>Happy Customers</p>\n    </div>\n    <div class=\"stat\">\n      <h3>50+</h3>\n      <p>Team Members</p>\n    </div>\n    <div class=\"stat\">\n      <h3>24/7</h3>\n      <p>Support</p>\n    </div>\n  </div>\n  <button class=\"contact-btn primary\">Get In Touch</button>\n</div>",
     "comments": []
@@ -46,7 +54,11 @@
     "submittedBy": "Jamie Park",
     "submittedDate": "2024-01-17T11:45:00Z",
     "status": "draft",
-    "tags": ["config", "products", "json"],
+    "tags": [
+      "config",
+      "products",
+      "json"
+    ],
     "currentContent": "{\n  \"products\": {\n    \"basic\": {\n      \"name\": \"Basic Plan\",\n      \"price\": 29,\n      \"features\": [\"Feature A\", \"Feature B\"]\n    }\n  }\n}",
     "proposedContent": "{\n  \"products\": {\n    \"basic\": {\n      \"name\": \"Starter Plan\",\n      \"price\": 29,\n      \"features\": [\"Core Features\", \"Email Support\", \"Basic Analytics\"]\n    },\n    \"pro\": {\n      \"name\": \"Professional Plan\",\n      \"price\": 79,\n      \"features\": [\"All Starter Features\", \"Priority Support\", \"Advanced Analytics\", \"API Access\"]\n    },\n    \"enterprise\": {\n      \"name\": \"Enterprise Plan\",\n      \"price\": \"custom\",\n      \"features\": [\"All Pro Features\", \"Dedicated Support\", \"Custom Integrations\", \"SLA\"]\n    }\n  }\n}",
     "comments": [
@@ -66,7 +78,11 @@
     "submittedBy": "Design Team",
     "submittedDate": "2024-01-18T08:30:00Z",
     "status": "in_review",
-    "tags": ["images", "hero", "banner"],
+    "tags": [
+      "images",
+      "hero",
+      "banner"
+    ],
     "currentContent": "https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=400&fit=crop",
     "proposedContent": "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=400&fit=crop",
     "comments": [
@@ -77,5 +93,21 @@
         "timestamp": "2024-01-18T10:15:00Z"
       }
     ]
+  },
+  {
+    "id": "edit-1750555220790",
+    "title": "test",
+    "type": "Text",
+    "targetLocation": "/content/test.txt",
+    "submittedBy": "dev@eir.inc",
+    "submittedDate": "2025-06-22T01:20:20.790Z",
+    "status": "draft",
+    "tags": [
+      "test",
+      "editor"
+    ],
+    "currentContent": "",
+    "proposedContent": "asdfasdf",
+    "comments": []
   }
-] 
+]
