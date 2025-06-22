@@ -1,0 +1,28 @@
+# OZ CMS 2.0 Changelog
+
+## 2024-01-19 - Initial Project Setup
+
+### Added
+- **Project Foundation**: Set up Next.js 14 project structure with TypeScript
+- **Package Configuration**: Added dependencies for React, Next.js, Tailwind CSS, and Lucide React icons
+- **Build Configuration**: Created Next.js, Tailwind, PostCSS, and TypeScript configurations
+- **Component Integration**: Moved existing ApprovalDetailModal component into src/components/
+- **Demo Application**: Created main demo page at / to showcase the ApprovalDetailModal component
+- **Global Styles**: Set up Tailwind CSS with custom scrollbar styles and dark mode support
+- **API Structure**: Created initial content API route at /api/content for GET/POST operations
+- **Data Storage**: Set up JSON file-based storage with sample content data (4 demo items)
+- **Deployment Configuration**: Added Vercel configuration for easy deployment
+- **Documentation**: Created comprehensive README with setup and deployment instructions
+
+### Context
+- User requested to build web service around existing ApprovalDetailModal component
+- Followed project spec for lightweight CMS with approval workflow
+- Focused on getting component running and deployable to Vercel first
+- Used flat-file JSON storage as specified in project requirements
+- No external auth system - using optional environment-based admin secret
+
+### Next Steps
+- Install dependencies and test local development
+- Deploy to Vercel for live testing
+- Add additional API routes for individual content item operations
+- Expand the demo with more interactive features 

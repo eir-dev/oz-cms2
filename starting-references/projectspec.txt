@@ -1,0 +1,198 @@
+Perfect. Here’s a complete project spec for a single-repo React app with lite API routes, no external dependencies, and designed for deployment on Vercel. It’s a lightweight CMS tool with an approval workflow, ideal for internal use.
+
+⸻
+
+🧱 Project Spec — Lightweight CMS with Approval Workflow
+
+Deployment: Vercel
+Tech Stack: React (Frontend), Node.js (API Routes), JSON file-based storage
+Auth: None (trusted internal use or basic environment-based access token)
+Data Storage: Local flat files (JSON) managed via API routes
+Monorepo Structure: All-in-one
+
+⸻
+
+📁 Folder Structure
+
+cms-approval-lite/
+├── public/
+├── src/
+│   ├── pages/              // Next.js-style or Vite + React Router
+│   │   ├── index.tsx       // Dashboard
+│   │   ├── content/[id].tsx
+│   │   ├── review/index.tsx
+│   │   ├── review/[id].tsx
+│   │   ├── approvals/index.tsx
+│   │   ├── history/[id].tsx
+│   │   └── settings.tsx
+│   ├── components/
+│   ├── lib/                // Content utilities
+│   └── styles/
+├── api/
+│   ├── content/            // Lite REST-style file routes
+│   │   ├── index.ts        // GET all, POST new
+│   │   └── [id].ts         // GET/PUT/DELETE one
+│   ├── review/
+│   ├── approvals/
+│   └── utils/
+├── data/
+│   └── content.json        // Initial seed data, versioned manually
+├── vercel.json
+└── package.json
+
+
+⸻
+
+⚙️ App Purpose
+
+A trusted, no-login tool that allows team members to:
+	•	Propose updates to static content
+	•	Move content through review → approval → publish
+	•	Avoid external CMS churn between dev, marketing, and design
+
+⸻
+
+🧭 Pages & Responsibilities
+
+1. / — Dashboard
+
+Purpose: See all content blocks, grouped by status
+
+Features:
+	•	Filters: Draft / In Review / Ready for Approval / Published
+	•	Search bar
+	•	Actions: View, Edit, Submit
+	•	Button: “New Content”
+
+⸻
+
+2. /content/[id] — Edit Page
+
+Purpose: View and edit the contents of one content block
+
+Features:
+	•	Metadata form: Title, Slug, Page Target
+	•	Textarea: Markdown or JSON body
+	•	Save as draft or Submit for review
+	•	View version history
+
+⸻
+
+3. /review — Review Queue
+
+Purpose: List of content items awaiting review
+
+Features:
+	•	Table of In Review items
+	•	Click to open detail view
+
+⸻
+
+4. /review/[id] — Review Detail
+
+Purpose: Reviewer inspects proposed content
+
+Features:
+	•	Side-by-side diff: current vs proposed
+	•	Comment thread (local only, basic textarea)
+	•	Buttons: Approve → Approval stage, Request Changes → returns to Draft, Reject → Archive
+
+⸻
+
+5. /approvals — Approvals Page
+
+Purpose: Final sign-off for publishing content
+
+Features:
+	•	List of Ready for Approval content
+	•	Approve → status: Published
+	•	Reject or Request Changes
+
+⸻
+
+6. /history/[id] — Version History Page
+
+Purpose: View past versions of a content block
+
+Features:
+	•	Version list with timestamps
+	•	View diff for any two versions
+	•	Revert to previous
+
+⸻
+
+7. /settings — Settings Page (Optional)
+
+Purpose: Configuration UI
+
+Features:
+	•	Edit roles (local list)
+	•	Status flow customization
+	•	Site-wide content export/import
+
+⸻
+
+🔄 Content Status Flow
+	•	draft
+	•	in_review
+	•	ready_for_approval
+	•	published
+	•	archived (e.g. rejected)
+
+⸻
+
+📦 API Routes
+
+All routes read/write to data/content.json or similar JSON file on disk.
+
+GET /api/content
+	•	Returns all content items
+
+POST /api/content
+	•	Adds a new content item
+
+GET /api/content/:id
+	•	Fetches one item
+
+PUT /api/content/:id
+	•	Updates item (content, status, comments)
+
+DELETE /api/content/:id
+	•	Deletes or archives item
+
+POST /api/review/:id
+	•	Submits review outcome (approve/request/reject)
+
+POST /api/approve/:id
+	•	Final approval and publishing
+
+⸻
+
+🧠 Design Philosophy
+	•	Flat-file JSON store (or use fs for per-item storage)
+	•	Local versioning (append-only logs or history[] on content)
+	•	No third-party auth or backend
+	•	Runs fully on Vercel with zero cold starts
+	•	Editor-friendly: minimal React setup, raw Markdown editing
+	•	Versioning managed through frontend and committed with local state only
+
+⸻
+
+🔒 Access Control (Minimal)
+	•	No login, but require an internal ENV-based secret for critical actions:
+
+if (req.headers['x-admin-secret'] !== process.env.ADMIN_SECRET) {
+  return res.status(401).json({ error: 'Unauthorized' })
+}
+
+
+
+⸻
+
+🚀 Deployment
+	•	Push to GitHub
+	•	Connect to Vercel
+	•	Add ADMIN_SECRET to environment variables
+	•	Done — all routes serverless, no external DB or auth
+
+⸻
